@@ -1,0 +1,20 @@
+# dags/config/mes_tables.yml
+source_conn_id: mes_readonly        # Airflow 里存的数据库连接
+target_schema: RAW.MES
+
+tables:
+  - name: CELL_MASTER
+    incremental_column: LAST_MODIFIED_TS
+    lookback_hours: 2
+    primary_key: [CELL_BC]
+
+  - name: EOL_TEST_RESULT
+    incremental_column: LAST_MODIFIED_TS
+    lookback_hours: 2
+    primary_key: [CELL_BC, TEST_SEQ]
+
+  # ↓↓↓ 本次新增 ↓↓↓
+  - name: FILL_STATION_RESULT
+    incremental_column: LAST_MODIFIED_TS
+    lookback_hours: 2
+    primary_key: [CELL_BC, STN_ID, FILL_TS]
