@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: int_cell_fill_attempts
+    description: "每颗电芯每次注液尝试一行，含尝试序号和注液偏差"
+    columns:
+      - name: fill_record_id
+        tests:
+          - unique
+          - not_null
+
+      - name: cell_id
+        tests:
+          - not_null
+
+      - name: fill_weight_g
+        description: "实际注液量（g）= 注液后重量 - 注液前重量"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
+              config:
+                severity: error        # 注液量 ≤ 0 物理上不可能，直接报错
+
+      - name: fill_deviation_pct
+        description: "(实际 - 目标) / 目标 × 100"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: -10
+              max_value: 10
+              config:
+                severity: warn         # 超出只告警，可能是称重传感器漂移
+                warn_if: ">50"         # 超过 50 行才告警，少量离群不打扰
+
+    tests:
+      # 同一颗电芯的尝试序号不能重复
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - cell_id
+            - fill_attempt_seq
+
+      # 每颗电芯只能有一条最终记录
+      - dbt_utils.expression_is_true:
+          expression: "1 = 1"
+          config:
+            where: "is_final_attempt"
+          # 上面这种写法不直观，实际我们用自定义测试，见下面
