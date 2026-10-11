@@ -1,0 +1,16 @@
+/*
+告诉 dbt raw 层的表在哪，顺便设新鲜度检查。
+*/
+version: 2
+
+sources:
+  - name: mes
+    database: raw
+    schema: mes
+    loaded_at_field: _loaded_at
+    freshness:
+      warn_after: {count: 6, period: hour}
+      error_after: {count: 24, period: hour}
+    tables:
+      - name: fill_station_result
+        description: "注液工站每次注液的原始记录，由 Airflow 从 MES 只读库增量抽取"
